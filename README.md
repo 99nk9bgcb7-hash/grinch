@@ -31,9 +31,11 @@ python3 build.py
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-The illustrations and local fonts are in `assets/`, along with the font licenses. The illustrations were generated for this calendar using the supplied visual reference. Popup art uses a 4×4 atlas and a supplemental 2×2 atlas for SPA, Alza, Ambiente and Rituals, rendered with CSS. Michelin and Mini fan retain their original illustrations. Sephora uses gold accents and neutral captions; its existing illustration remains unchanged.
+The illustrations and local fonts are in `assets/`, along with the font licenses. The illustrations were generated for this calendar using the supplied visual reference. Popup art uses a 4×4 atlas and a supplemental 2×2 atlas for SPA, Alza, Ambiente and Rituals, rendered with CSS. Michelin and Mini fan retain their original illustrations.
 
-The iPhone popup uses its own complete portrait in `assets/grinch-iphone.png`: the Grinch in a Christmas sweater holds only an orange phone, with his other hand on his hip. The full square illustration is displayed without the previous diagonal mask. Other gift portraits continue to use their existing illustrations.
+The iPhone popup uses its own complete portrait in `assets/grinch-iphone.png`: the Grinch in a Christmas sweater holds only an orange phone, with his other hand on his hip. The full square illustration is displayed without the previous diagonal mask.
+
+All Sephora popups use the dedicated `assets/grinch-sephora.png` portrait: the Grinch in a dark sweater holds amber perfume beside a black and ivory shopping bag. Gold accents and playful fragrance captions keep the presentation neutral, with no pink makeup styling.
 
 Use the existing checkout. Cloud tasks already run in isolation; an additional Git worktree is unnecessary.
 

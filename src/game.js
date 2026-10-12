@@ -121,7 +121,7 @@
     'SPA': [16, 'Do not disturb, darling', 'Cucumbers on. Responsibilities off. Finally, a proper plan.', 'Robes before responsibilities'],
     'Tefal Easy Fry & Grill': [5, 'Hot fries. Cold replies.', 'Keep your fries crispy and your replies to your ex ice-cold.', 'Crispy is a personality'],
     'Nintendo Switch 2': [7, 'Player one: you', 'Go save the princess. Nobody can save me from small talk.', 'Reality can wait'],
-    'Sephora': [8, 'Good taste. Bad attitude.', 'A little luxury. A lot of attitude. Some things never change.', 'Excellent taste. Obviously.'],
+    'Sephora': [8, 'Smells like mischief', 'Smell expensive. Stay suspicious. Being nice is still optional.', 'Good scent. Bad attitude.'],
     'Oral-B iO Series 6': [9, 'A suspiciously good smile', 'Smile wider. Let them think you are the nice one.', 'Dazzle, then disappear'],
     'MONEY': [10, 'An extremely convincing gift', 'Money cannot buy happiness. Still, keep the receipt.', 'My favourite shade of green'],
     'American Tourister Airconic': [11, 'Emotional baggage sold separately', 'Pack your bags. Preferably for somewhere with fewer people.', 'One ticket out of here'],
@@ -268,10 +268,15 @@
     $('popupIcon').textContent = details.icon;
     const revised = details.art >= 16, artIndex = revised ? details.art - 16 : details.art, columns = revised ? 2 : 4;
     const phonePortrait = details.title === 'iPhone 18 Pro';
+    const sephoraPortrait = details.title === 'Sephora';
     $('popupArt').classList.toggle('revised-art', revised);
     $('popupArt').classList.toggle('iphone-portrait', phonePortrait);
+    $('popupArt').classList.toggle('sephora-portrait', sephoraPortrait);
     $('popupArt').style.backgroundPosition = `${(artIndex % columns) * 100 / (columns - 1)}% ${Math.floor(artIndex / columns) * 100 / (columns - 1)}%`;
-    $('popupArt').setAttribute('aria-label', phonePortrait ? 'The Grinch in a Santa hat holding an orange iPhone' : artLabels[details.art]);
+    const artDescription = phonePortrait ? 'The Grinch in a Santa hat holding an orange iPhone'
+      : sephoraPortrait ? 'The Grinch in a dark sweater holding amber perfume beside a black and ivory shopping bag'
+      : artLabels[details.art];
+    $('popupArt').setAttribute('aria-label', artDescription);
     $('okay').textContent = details.button;
     $('cancelRestart').hidden = !details.allowCancel;
     nextAction = action;

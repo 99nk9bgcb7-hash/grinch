@@ -113,6 +113,7 @@ button:disabled{cursor:default}
 .grinch-art{position:absolute;left:1.5%;bottom:78px;width:55%;aspect-ratio:1;background-image:url('__GRINCH_ATLAS__');background-size:400% 400%;background-repeat:no-repeat;z-index:2;mask-image:linear-gradient(to right,transparent,#000 5% 94%,transparent),linear-gradient(to bottom,transparent,#000 5% 91%,transparent);mask-composite:intersect}
 .grinch-art.revised-art{background-image:url('__GRINCH_REVISED__');background-size:200% 200%}
 .grinch-art.iphone-portrait{background-image:url('__GRINCH_IPHONE__');background-size:100% 100%}
+.grinch-art.sephora-portrait{background-image:url('__GRINCH_SEPHORA__');background-size:100% 100%}
 .popup-copy{position:relative;z-index:3;margin:54px 7% 112px 51%;width:42%;min-height:225px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}
 .popup-tag{color:#e3edba;font:700 9px/1.4 Arial,sans-serif;letter-spacing:.19em;text-transform:uppercase;max-width:90%}
 .gift-emoji{font-size:24px;line-height:1.1;margin-top:5px;filter:drop-shadow(0 2px 2px #0004)}
