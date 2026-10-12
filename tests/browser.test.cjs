@@ -28,6 +28,9 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
   assert.ok(!/[А-Яа-яЁё]/u.test(html), 'The complete standalone calendar must be in English.');
   assert.equal(await page.locator('.door').count(), 40);
+  assert.equal(await page.locator('#close, #howTo, #grinchNote, #soundToggle, #loveNote, .popup-close').count(), 0);
+  assert.equal(await page.locator('.header button').count(), 1);
+  assert.equal(await page.locator('#restart').innerText(), 'Restart');
   const session = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), KEY);
   const observed = [];
   let tricks = 0;
@@ -36,6 +39,8 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
     await page.locator('#overlay').waitFor({state:'visible'});
     const isTrick = await page.locator('#popup').evaluate(el => el.classList.contains('trick'));
     const title = await page.locator('#popupTitle').innerText();
+    assert.equal(await page.locator('#popupWindow').innerText(), 'WINDOW ' + String(day).padStart(2, '0'));
+    assert.equal(await page.locator('#popup button:visible').count(), 1);
     if (day <= original.length) {
       const gift = original[session.order[day - 1]];
       assert.equal(title, clean(gift[1]));
@@ -52,7 +57,7 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
     }));
     const beforeClose = await page.evaluate(key => localStorage.getItem(key), KEY);
     if (isTrick) {
-      assert.equal(await page.locator('#okay').innerText(), 'Try another window');
+      assert.ok(!/another|try again|next window|still out there/i.test(await page.locator('#popup').innerText()), 'Losing popups must not announce an extra pick.');
       await page.locator('#okay').click();
     } else await page.keyboard.press('Escape');
     await page.locator('#overlay').waitFor({state:'hidden'});
@@ -74,28 +79,38 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
   await page.locator('#door-5').evaluate(button => button.click());
   assert.equal(await page.locator('#overlay').isVisible(), false);
   assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), saved);
-  await page.locator('#grinchNote').click();
+  await page.locator('#door-38').click();
+  await page.locator('#overlay').waitFor({state:'visible'});
   await page.keyboard.press('Tab');
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'close');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'okay');
   await page.keyboard.press('Shift+Tab');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'okay');
   await page.keyboard.press('Tab');
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'close');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'okay');
   assert.equal(await page.locator('#home').evaluate(el => el.inert), true);
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#home').evaluate(el => el.inert), false);
   console.log('PASS: opened state survives reload; disabled windows cannot reopen; keyboard and focus work.');
 
-  await page.locator('#howTo').click();
   await page.locator('#restart').click();
-  await page.locator('#close').click();
+  assert.equal(await page.locator('#popupWindow').isVisible(), false);
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'okay');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'cancelRestart');
+  await page.locator('#cancelRestart').click();
   assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), saved);
-  await page.locator('#howTo').click();
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'restart');
   await page.locator('#restart').click();
   await page.locator('#okay').click();
   await page.locator('#overlay').waitFor({state:'hidden'});
   assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).claims, KEY), {});
   assert.equal(await page.locator('.door.opened, .door:disabled').count(), 0);
+  await page.locator('#door-29').click();
+  await page.locator('#overlay').waitFor({state:'visible'});
+  assert.equal(await page.locator('#popupTitle').innerText(), 'Ambiente');
+  assert.equal(await page.locator('#popupWindow').innerText(), 'WINDOW 29', 'Show the picked window, not the gift queue position.');
+  await page.locator('#okay').click();
   console.log('PASS: only a confirmed new game closes and re-enables the windows.');
 
   const demo = createSession(() => .5);
@@ -107,6 +122,14 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
     await page.reload();
     await page.evaluate(() => document.fonts.ready);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), JSON.stringify(viewport));
+    assert.equal(await page.locator('#restart').isVisible(), true);
+    for (const day of [6, 29]) {
+      assert.ok(await page.locator('#door-' + day).evaluate(el => {
+        const door = el.getBoundingClientRect(), cane = el.querySelector('svg.candy-cane').getBoundingClientRect();
+        return cane.left > door.left && cane.right < door.right && cane.top > door.top && cane.bottom < door.bottom;
+      }), `Candy cane inside window ${day} at ${viewport.width}px`);
+    }
+    if (viewport.width === 1672) await page.screenshot({path:'/tmp/grinch-revised-calendar.png'});
     for (let day = 1; day <= original.length; day++) {
       await page.locator('#door-' + day).click();
       await page.locator('#overlay').waitFor({state:'visible'});
@@ -114,6 +137,13 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
         const copy = el.querySelector('.popup-copy'), button = el.querySelector('.popup-button');
         return copy.offsetTop + copy.offsetHeight <= button.offsetTop && button.scrollWidth <= button.clientWidth + 2;
       }), `Popup layout: ${viewport.width}px, day ${day}`);
+      if ([1, 3, 5, 21, 23, 25].includes(day)) {
+        const expected = {1:['amber','holly',true],3:['ice','stars',true],5:['rose','bow',true],21:['gold','bow',false],23:['mint','ornament',false],25:['amber','ornament',true]}[day];
+        assert.equal(await page.locator('#popup').evaluate((el, theme) => el.classList.contains('theme-' + theme), expected[0]), true);
+        assert.equal(await page.locator('#popupDecoration').getAttribute('href'), expected[1] === 'holly' ? '#holly' : '#decor-' + expected[1]);
+        assert.equal(await page.locator('#popupArt').evaluate(el => el.classList.contains('revised-art')), expected[2]);
+        if (viewport.width === 1672 || viewport.width === 390) await page.screenshot({path:`/tmp/grinch-revised-${viewport.width}-${day}.png`});
+      }
       if (viewport.width === 390 && day === 7) await page.screenshot({path:'/tmp/grinch-english-loss-mobile.png'});
       await page.locator('#okay').click();
       if (viewport.width === 390 && day === 8) await page.screenshot({path:'/tmp/grinch-opened-mobile.png',fullPage:true});
@@ -171,7 +201,7 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
   await privatePage.locator('#overlay').waitFor({state:'visible'});
   assert.equal(await privatePage.locator('#popupTitle').innerText(), 'Ambiente');
   assert.equal(await privatePage.locator('#storageNotice').isVisible(), true);
-  await privatePage.locator('#close').click();
+  await privatePage.locator('#okay').click();
   assert.equal(await privatePage.locator('#door-1').isDisabled(),true);
   console.log('PASS: storage-disabled browsers keep opened windows for the current tab and explain the limitation.');
   assert.deepEqual(errors, []);

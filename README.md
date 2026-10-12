@@ -6,11 +6,11 @@ The finished calendar is **index.html**. All illustrations, fonts, styles and ga
 
 Take turns on **one shared device and browser**. Pick any unopened window. Once opened, a window stays visibly open, displays its result and is disabled for everyone using that browser, including after a reload. There are no gift counters or progress bars.
 
-A losing window displays the Grinch and a **Try another window** button. The button closes the popup; the player then picks another unopened window themselves. The losing window stays open and disabled. A loss does not consume or automatically reserve the next real gift.
+A losing window displays the Grinch and a playful caption without announcing another attempt. Its central button closes the popup; the player can then pick another unopened window. The losing window stays open and disabled. A loss does not consume or automatically reserve the next real gift.
 
 The original inventory contains 34 real gifts, including duplicates, and three losing events. Only the ordinary physical gifts shuffle among their original positions. Each new window receives the next event from the queue. All real gifts remain available regardless of which window numbers are chosen. After every event has been revealed, three unassigned mystery windows remain closed and display a note from the Grinch if clicked; they do not contain additional prizes.
 
-The interface, popup captions, buttons, accessibility labels and notices are all in English. Every popup includes a themed Grinch illustration.
+The interface, popup captions, buttons, accessibility labels and notices are all in English. Every window popup includes its window number and a themed Grinch illustration. Decorations and accent colours vary by gift. Gift popups close with their central labelled button, Escape or a click outside; there are no close icons.
 
 ## Saved games
 
@@ -18,7 +18,7 @@ The interface, popup captions, buttons, accessibility labels and notices are all
 - This is a shared-device calendar, not a server-backed game that synchronizes different phones or browsers. Use the same browser and URL throughout the event.
 - Existing version 4 games upgrade automatically. Previously awarded gifts stay assigned to their original windows and become visibly open. Pranks that were already bundled with those gifts are not issued again. The legacy save remains available as a backup.
 - If browser storage is blocked, the calendar keeps its state in the current tab and displays an English notice. Keep the tab open in that case.
-- **How to play → Start a new story → confirmation** clears the current game and closes all windows. On a small screen, tap **Advent Calendar** to open the instructions. Sound is off until enabled explicitly.
+- **Restart → Restart calendar** clears the current game and closes all windows. Choose **Keep playing** to cancel. Restart is available in the header on desktop and mobile.
 
 ## Development
 
@@ -29,7 +29,7 @@ python3 build.py
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-The illustrations and local fonts are in `assets/`, along with the font licenses. The illustrations were generated for this calendar using the supplied visual reference. Popup art uses a 4×4 atlas rendered with CSS.
+The illustrations and local fonts are in `assets/`, along with the font licenses. The illustrations were generated for this calendar using the supplied visual reference. Popup art uses a 4×4 atlas and a supplemental 2×2 atlas for SPA, Alza, Ambiente and Rituals, rendered with CSS. Michelin and Mini fan retain their original illustrations.
 
 Use the existing checkout. Cloud tasks already run in isolation; an additional Git worktree is unnecessary.
 

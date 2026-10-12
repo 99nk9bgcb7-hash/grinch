@@ -113,13 +113,12 @@
   const scene = $('home'), calendar = $('calendar'), overlay = $('overlay'), popup = $('popup');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let state, memoryOnly = false, busy = false, openingTimer = null, activeDoor = null, returnFocus = null, nextAction = null;
-  let audioContext = null;
   const descriptions = {
-    'Ambiente': [0, 'Dinner with a side of attitude', 'Order anything. My patience is not on the menu.', 'A table for fabulous, please'],
+    'Ambiente': [18, 'Pasta first. People later.', 'A cosy table. A full plate. My social battery can wait.', 'Save me the corner table'],
     'AirPods 5': [1, 'Do not disturb: upgraded', 'For tuning out small talk. And people. Mostly people.', 'Less chatter. More music.'],
-    'Alza': [2, 'A very smart move', 'Buy something smart. Someone around here should be.', 'Add to cart. Obviously.'],
+    'Alza': [17, 'A very smart move', 'Buy something smart. Someone around here should be.', 'Add to cart. Obviously.'],
     'Nespresso De’Longhi': [3, 'Espresso your inner Grinch', 'Before coffee: grumpy. After coffee: grumpy, but faster.', 'Make mine a double'],
-    'SPA': [4, 'Do not disturb, darling', 'Cucumbers on. Responsibilities off. Finally, a proper plan.', 'Robes before responsibilities'],
+    'SPA': [16, 'Do not disturb, darling', 'Cucumbers on. Responsibilities off. Finally, a proper plan.', 'Robes before responsibilities'],
     'Tefal Easy Fry & Grill': [5, 'Hot fries. Cold replies.', 'Keep your fries crispy and your replies to your ex ice-cold.', 'Crispy is a personality'],
     'Nintendo Switch 2': [7, 'Player one: you', 'Go save the princess. Nobody can save me from small talk.', 'Reality can wait'],
     'Sephora': [8, 'Grinch glam club', 'We cannot fix your attitude. We can match your highlighter.', 'Pretty. Petty. Perfect.'],
@@ -132,9 +131,21 @@
     'Tefal OptiGrill+': [5, 'A proper Grinch roasting', 'Grill the steaks. Leave roasting people to me.', 'Make mine medium Grinch'],
     'Michelin Restaurant': [0, 'Excellent taste. Questionable manners.', 'Try to behave. At least between courses.', 'Dress code: magnificent'],
     'Mini fan Dyson': [2, 'Too cool for the nonsense', 'The cold stare is mine. The cool breeze is yours.', 'Cool, calm, unavailable'],
-    'Rituals': [4, 'Your very own quiet luxury', 'Light a candle. Silence the chaos. Put everyone else on mute.', 'Unavailable. Blissfully.'],
+    'Rituals': [19, 'Your very own quiet luxury', 'Light a candle. Silence the chaos. Put everyone else on mute.', 'Unavailable. Blissfully.'],
     'iPhone 18 Pro': [15, 'Hello, is this luxury?', 'For pictures of the tree, your dinner, and your “I deserve this” face.', 'First, a selfie with me'],
     'iPad 11': [15, 'Big screen. Tiny commitments.', 'A bigger screen for your very small “just one more episode”.', 'One more. The last one.']
+  };
+  const popupStyles = {
+    'Ambiente': ['amber', 'holly'], 'AirPods 5': ['ice', 'bow'],
+    'Alza': ['ice', 'stars'], 'Nespresso De’Longhi': ['copper', 'holly'],
+    'SPA': ['rose', 'bow'], 'Tefal Easy Fry & Grill': ['copper', 'ornament'],
+    'Nintendo Switch 2': ['mint', 'stars'], 'Sephora': ['rose', 'ornament'],
+    'Oral-B iO Series 6': ['ice', 'stars'], 'MONEY': ['mint', 'ornament'],
+    'American Tourister Airconic': ['ice', 'ornament'], 'Shopping': ['amber', 'bow'],
+    'SURPRISE': ['gold', 'stars'], 'Dyson V8 Cyclone 2026': ['mint', 'stars'],
+    'Tefal OptiGrill+': ['copper', 'holly'], 'Michelin Restaurant': ['gold', 'bow'],
+    'Mini fan Dyson': ['mint', 'ornament'], 'Rituals': ['amber', 'ornament'],
+    'iPhone 18 Pro': ['copper', 'bow'], 'iPad 11': ['ice', 'stars']
   };
   const artLabels = [
     'The Grinch in a tuxedo enjoying a festive dinner', 'The Grinch wearing white wireless earbuds',
@@ -145,7 +156,11 @@
     'The Grinch brushing his teeth with an electric toothbrush', 'The Grinch holding a fan of banknotes',
     'The Grinch with a turquoise suitcase and a boarding pass', 'The Grinch carrying pink shopping bags',
     'The Grinch opening a glowing gift box', 'The Grinch cleaning with a cordless vacuum',
-    'The Grinch holding an orange phone and a tablet'
+    'The Grinch holding an orange phone and a tablet',
+    'The Grinch relaxing in a pink spa robe, holding champagne in one hand beside candles',
+    'The Grinch in a teal hoodie holding a laptop and a wireless mouse',
+    'The Grinch enjoying pasta at a cosy bistro table',
+    'The Grinch in a cream robe holding an amber candle beside a reed diffuser'
   ];
   const looks = [
     'green heart','cream ribbon bow','green bauble','cream holly','green bow','green cane','cream star','red neon','green holly','red star',
@@ -187,7 +202,7 @@
       const style = looks[day - 1];
       const door = document.createElement('button');
       door.type = 'button';
-      door.className = 'door ' + style.split(' ')[0] + (style.includes('gold-bauble') ? ' gold-bauble' : '');
+      door.className = 'door ' + style.split(' ')[0] + (style.includes('gold-bauble') ? ' gold-bauble' : '') + (style.includes('cane') ? ' has-candy' : '');
       door.id = 'door-' + day;
       door.setAttribute('aria-label', 'Open window ' + day);
       let decor = symbol('snow', 'snowcap') + '<span class="hinge"></span><span class="hinge lower"></span>';
@@ -199,7 +214,7 @@
       if (style.includes('star')) decor += '<span class="star-decor">✶</span>';
       if (style.includes('neon')) decor += '<span class="neon-heart">♡</span>';
       if (style.includes('heart')) decor += '<span class="star-decor">♡</span>';
-      if (style.includes('cane')) decor += '<span class="candy-cane"></span>';
+      if (style.includes('cane')) decor += symbol('candy-cane', 'candy-cane');
       door.innerHTML = '<span class="door-frame" aria-hidden="true"></span><span class="door-leaf" aria-hidden="true">' + decor + '<span class="number">' + day + '</span><span class="knob"></span></span>';
       door.addEventListener('click', () => openDoor(day));
       calendar.append(door);
@@ -235,57 +250,46 @@
     const [icon, rawName, type] = original[giftId];
     const name = cleanName(rawName);
     const [art, tag, caption, button] = descriptions[name];
-    return {icon, title: name, type: type === 'special' ? 'super' : type, art, tag, caption, button};
+    const [theme, decoration] = popupStyles[name];
+    return {icon, title: name, type: type === 'special' ? 'super' : type, art, tag, caption, button, theme, decoration};
   }
-  function chime() {
-    if (!state.sound) return;
-    try {
-      const Audio = window.AudioContext || window.webkitAudioContext;
-      if (!Audio) return;
-      audioContext ||= new Audio();
-      audioContext.resume().catch(() => {});
-      [659.25, 830.61, 987.77].forEach((hz, i) => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        const start = audioContext.currentTime + i * .11;
-        oscillator.type = 'sine'; oscillator.frequency.value = hz;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(.075, start + .012);
-        gain.gain.exponentialRampToValueAtTime(.001, start + .7);
-        oscillator.connect(gain); gain.connect(audioContext.destination);
-        oscillator.start(start); oscillator.stop(start + .72);
-      });
-    } catch { /* Audio is an optional enhancement. */ }
-  }
-  function showPopup(details, action = closePopup) {
+  function showPopup(details, action = closePopup, windowNumber = null) {
     if (overlay.hidden) returnFocus ||= document.activeElement;
-    popup.className = 'popup ' + (details.type || '') + (details.title.length > 16 ? ' long-title' : '');
+    const theme = details.theme || 'gold', decoration = details.decoration || 'stars';
+    popup.className = `popup ${details.type || ''} theme-${theme} decoration-${decoration}` + (details.title.length > 16 ? ' long-title' : '');
+    $('popupDecoration').setAttribute('href', decoration === 'holly' ? '#holly' : '#decor-' + decoration);
+    $('doodleLeft').textContent = theme === 'rose' ? '♡' : '✧';
+    $('doodleRight').textContent = theme === 'rose' ? '♡' : theme === 'ice' ? '❄' : '✦';
+    $('popupWindow').hidden = windowNumber === null;
+    $('popupWindow').textContent = windowNumber === null ? '' : 'WINDOW ' + String(windowNumber).padStart(2, '0');
     $('popupTitle').textContent = details.title;
     $('popupTag').textContent = details.tag;
     $('popupText').textContent = details.caption;
     $('popupIcon').textContent = details.icon;
-    $('popupArt').style.backgroundPosition = `${(details.art % 4) * 100 / 3}% ${Math.floor(details.art / 4) * 100 / 3}%`;
+    const revised = details.art >= 16, artIndex = revised ? details.art - 16 : details.art, columns = revised ? 2 : 4;
+    $('popupArt').classList.toggle('revised-art', revised);
+    $('popupArt').style.backgroundPosition = `${(artIndex % columns) * 100 / (columns - 1)}% ${Math.floor(artIndex / columns) * 100 / (columns - 1)}%`;
     $('popupArt').setAttribute('aria-label', artLabels[details.art]);
     $('okay').textContent = details.button;
-    $('restart').hidden = !details.allowRestart;
+    $('cancelRestart').hidden = !details.allowCancel;
     nextAction = action;
     overlay.hidden = false;
     scene.inert = true;
     document.body.style.overflow = 'hidden';
     popup.focus({preventScroll: true});
   }
-  function showGift(result) { showPopup(giftDetails(result.giftId)); }
-  function showTrick(result) {
+  function showGift(result, day) { showPopup(giftDetails(result.giftId), closePopup, day); }
+  function showTrick(result, day) {
     const laugh = result.giftId === 27;
-    showPopup({art: 6, icon: '😈', type: 'trick', tag: 'The Grinch strikes again',
+    showPopup({art: 6, icon: '😈', type: 'trick', theme: 'copper', decoration: 'holly', tag: 'The Grinch strikes again',
       title: original[result.giftId][1],
-      caption: laugh ? 'Tell your worst joke. I could use a laugh. Then pick another unopened window — your gift is still out there.' : 'I stole this one. Shocking, I know. Pick another unopened window and try your luck again!',
-      button: 'Try another window'
-    });
+      caption: laugh ? 'Tell your worst joke. I could use a laugh. My standards are low. My eyebrows are not.' : 'I stole this one. Shocking, I know. Consider it a masterclass in festive mischief.',
+      button: laugh ? 'Tough crowd.' : 'So very Grinch of you'
+    }, closePopup, day);
   }
-  function showNote() {
+  function showNote(day) {
     showPopup({art: 6, icon: '💌', type: 'info', tag: 'Personally. Grumpily. With love.', title: 'Do not tell anyone…',
-      caption: 'I think I like giving presents. A deeply inconvenient feeling. Sending hugs. But keep that between us.', button: 'Your secret is safe'});
+      caption: 'I think I like giving presents. A deeply inconvenient feeling. Sending hugs. But keep that between us.', button: 'Your secret is safe'}, closePopup, day);
   }
   async function openDoor(day) {
     if (busy || !overlay.hidden) return;
@@ -301,12 +305,11 @@
     renderOpenedWindows();
     if (result.kind === 'already-open') { closePopup(); return; }
     activeDoor.classList.add(result.kind === 'mystery' ? 'summoning' : 'revealing');
-    chime();
     openingTimer = setTimeout(() => {
       openingTimer = null;
-      if (result.kind === 'mystery') showNote();
-      else if (result.kind === 'trick') showTrick(result);
-      else showGift(result);
+      if (result.kind === 'mystery') showNote(day);
+      else if (result.kind === 'trick') showTrick(result, day);
+      else showGift(result, day);
     }, reducedMotion.matches ? 0 : 430);
   }
   function closePopup() {
@@ -328,40 +331,20 @@
     }
     returnFocus = null;
   }
-  function showHowTo() {
-    if (busy) return;
-    showPopup({art: 13, icon: '🎁', type: 'info', tag: 'House rules. Grinch rules.', title: 'Pick. Open. Celebrate.',
-      caption: 'Take turns on this device. Pick any unopened window. Opened windows stay open and cannot be picked again. Got Grinched? Close the card and pick another window.',
-      button: 'Let the mischief begin', allowRestart: true});
-  }
   function confirmRestart() {
-    showPopup({art: 6, icon: '🎀', type: 'info', tag: 'A fresh start. Same attitude.', title: 'Hide the gifts again?',
-      caption: 'This starts a new game and clears the opened windows on this device. Changed your mind? Just tap the close button.', button: 'Yes, start a new game'
+    if (busy || !overlay.hidden) return;
+    showPopup({art: 6, icon: '🎁', type: 'info', tag: 'A fresh start. Same attitude.', title: 'Hide the gifts again?',
+      caption: 'Start a fresh game and close every window on this device. Your current game will be cleared.', button: 'Restart calendar', allowCancel: true
     }, async () => {
-      await atomic(() => { const sound = state.sound; state = createSession(); state.sound = sound; save(); });
+      await atomic(() => { state = createSession(); save(); });
       closePopup();
     });
   }
-  function updateSoundButton() {
-    $('soundToggle').setAttribute('aria-pressed', String(state.sound));
-    $('soundToggle').setAttribute('aria-label', state.sound ? 'Turn sound off' : 'Turn sound on');
-  }
 
-  renderDoors(); renderOpenedWindows(); updateSoundButton();
+  renderDoors(); renderOpenedWindows();
   $('okay').addEventListener('click', () => { if (nextAction) nextAction(); });
-  $('close').addEventListener('click', closePopup);
-  $('howTo').addEventListener('click', showHowTo);
-  $('grinchNote').addEventListener('click', () => { if (!busy) showNote(); });
-  $('loveNote').addEventListener('click', () => { if (!busy) showNote(); });
+  $('cancelRestart').addEventListener('click', closePopup);
   $('restart').addEventListener('click', confirmRestart);
-  $('soundToggle').addEventListener('click', async () => {
-    await atomic(() => { refreshState(); state.sound = !state.sound; save(); });
-    updateSoundButton(); chime();
-  });
-  // On small screens the active navigation link also provides the instructions.
-  document.querySelector('.nav-active').addEventListener('click', event => {
-    if (matchMedia('(max-width:600px)').matches) { event.preventDefault(); showHowTo(); }
-  });
   overlay.addEventListener('click', event => { if (event.target === overlay) closePopup(); });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && (!overlay.hidden || openingTimer !== null)) { event.preventDefault(); closePopup(); return; }
@@ -372,7 +355,7 @@
     else if (!event.shiftKey && (document.activeElement === last || document.activeElement === popup)) { event.preventDefault(); first.focus(); }
   });
   window.addEventListener('storage', event => {
-    if (event.key === KEY) { refreshState(); renderOpenedWindows(); updateSoundButton(); }
+    if (event.key === KEY) { refreshState(); renderOpenedWindows(); }
   });
   if (!reducedMotion.matches) {
     for (let i = 0; i < 23; i++) {
