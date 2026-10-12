@@ -1,0 +1,14 @@
+{
+  "name": "grinchmas-calendar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone illustrated Grinch advent calendar",
+  "scripts": {
+    "build": "python3 build.py",
+    "test": "node --test tests/engine.test.cjs",
+    "test:browser": "node tests/browser.test.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#06291e">
+  <meta name="description" content="Немного магии, много характера. Рождественский календарь Гринча.">
+  <title>Grinchmas — In My Grinch Era</title>
+  <style>/* INLINE_STYLES */</style>
+</head>
+<body>
+  <svg class="svg-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="red-satin" x2=".8" y2="1"><stop stop-color="#ff747e"/><stop offset=".4" stop-color="#d40e32"/><stop offset="1" stop-color="#6c001d"/></linearGradient>
+      <linearGradient id="pink-satin" x2=".9" y2="1"><stop stop-color="#ffe0ee"/><stop offset=".4" stop-color="#ff8eb8"/><stop offset="1" stop-color="#bd356b"/></linearGradient>
+      <symbol id="bow" viewBox="0 0 100 100">
+        <path d="M47 48C29 11 3 15 8 35c3 14 20 17 39 18-16 15-22 32-23 42l19-9 5 8 9-43" fill="url(#red-satin)" stroke="#8d1329" stroke-width="1.5"/>
+        <path d="M51 47C69 6 96 16 92 37c-4 13-21 16-39 16l22 39-16-5-3 8-12-42" fill="url(#red-satin)" stroke="#8d1329" stroke-width="1.5"/>
+        <path d="M41 43q12-6 18 4l-2 13q-11 6-18-4z" fill="#e8314f" stroke="#870921" stroke-width="1.5"/>
+        <path d="M14 29q15-9 29 16M58 44q16-19 28-15M32 80l11-19" fill="none" stroke="#ffb2b4" stroke-width="2.5" opacity=".65"/>
+      </symbol>
+      <symbol id="pink-bow" viewBox="0 0 140 130">
+        <path d="M66 50C30 2 2 11 9 38c2 13 24 25 54 28C39 94 29 119 30 121c13 7 31-20 42-49" fill="url(#pink-satin)" stroke="#b74775" stroke-width="2"/>
+        <path d="M76 53c19-44 61-42 58-12-2 17-30 23-54 25 11 16 20 46 17 57-20-5-28-26-30-52" fill="url(#pink-satin)" stroke="#b74775" stroke-width="2"/>
+        <path d="M60 52c3-9 17-13 27-2 7 10 1 24-11 25-13 0-20-13-16-23" fill="#ffaacf" stroke="#b74775" stroke-width="2"/>
+        <path d="M18 31Q42 22 62 55M90 51Q113 30 129 37M44 98Q62 74 64 67" stroke="#ffe4f0" fill="none" stroke-width="4" stroke-linecap="round" opacity=".75"/>
+      </symbol>
+      <symbol id="holly" viewBox="0 0 80 60">
+        <path d="M37 35Q6 42 3 7l12 4 6-8 5 12 11-1-1 11 8 6M40 34Q44 6 74 7l-4 10 8 7-12 4 1 12-12-3-7 9" fill="#246339" stroke="#71964b" stroke-width="1.4"/>
+        <path d="M38 37 12 15M43 35 67 15" stroke="#acb960" stroke-width="1.5"/>
+        <g fill="#d51a37" stroke="#810820" stroke-width="1"><circle cx="35" cy="36" r="7"/><circle cx="47" cy="38" r="7"/><circle cx="40" cy="47" r="7"/></g><g fill="#ff8a82"><circle cx="33" cy="33" r="2"/><circle cx="45" cy="35" r="2"/><circle cx="38" cy="44" r="2"/></g>
+      </symbol>
+      <symbol id="snow" viewBox="0 0 120 12"><path d="M1 8Q3 2 12 4T28 3Q34 0 40 3T54 2Q62 4 69 1T84 3Q91 1 98 3T117 3l2 6q-10-3-16 0T83 7Q72 12 64 7T49 8Q40 11 34 7T20 8Q14 11 10 8T1 9" fill="#fff3e8"/><path d="M6 4 114 4" stroke="#fff" opacity=".7"/></symbol>
+      <symbol id="heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+      <symbol id="sound" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4ZM15 8q4 4 0 8m3-11q7 7 0 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path class="sound-slash" d="m3 3 18 18" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    </defs>
+  </svg>
+  <a class="skip-link" href="#calendar">К окошкам</a>
+  <main class="scene" id="home">
+    <header class="header">
+      <a class="brand" href="#home" aria-label="Grinchmas — на главную"><span class="santa-hat" aria-hidden="true"></span>Grinch<span>Mas</span></a>
+      <nav aria-label="Главная навигация">
+        <a class="nav-active" href="#calendar"><span aria-hidden="true">♥</span> Календарь</a>
+        <button type="button" id="howTo">Как играть</button>
+        <button type="button" id="grinchNote">От Гринча</button>
+      </nav>
+      <div class="header-actions">
+        <button type="button" class="icon-button" id="soundToggle" aria-label="Включить звук" aria-pressed="false"><svg aria-hidden="true"><use href="#sound"/></svg></button>
+        <button type="button" class="icon-button" id="loveNote" aria-label="Письмо от Гринча"><svg aria-hidden="true"><use href="#heart"/></svg></button>
+      </div>
+    </header>
+    <div class="era" aria-labelledby="mainTitle">
+      <span>In My</span>
+      <h1 id="mainTitle">Grinch Era<span aria-hidden="true">♡</span></h1>
+      <p>Better gifts.<br>Worse attitude.</p>
+      <i aria-hidden="true"></i>
+    </div>
+    <div class="signposts" aria-hidden="true"><span>WHO-VILLE</span><span>GRINCH’S LAIR</span><span>GOOD GIFTS<br>BAD VIBES ♡</span></div>
+    <section class="calendar-shell" aria-label="Рождественский календарь">
+      <h2 class="sr-only">Выбери окошко — Гринч приготовил сюрприз</h2>
+      <div class="calendar" id="calendar" tabindex="-1"></div>
+    </section>
+    <footer class="footer"><p>НЕМНОГО МАГИИ. МНОГО ХАРАКТЕРА.</p><span>Выбери окошко. Только не зли Гринча.</span><div aria-hidden="true">────── ♡ ──────</div></footer>
+    <div class="snowfall" id="snowfall" aria-hidden="true"></div>
+  </main>
+  <p id="storageNotice" class="storage-notice" role="status" hidden>Браузер не сохраняет историю. Оставь эту вкладку открытой, чтобы не потерять подарки.</p>
+  <div class="overlay" id="overlay" hidden>
+    <section class="popup" id="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle" aria-describedby="popupText" tabindex="-1">
+      <svg class="popup-bow" aria-hidden="true"><use href="#pink-bow"/></svg>
+      <button type="button" class="popup-close" id="close" aria-label="Закрыть">×</button>
+      <span class="popup-star s1" aria-hidden="true">✦</span><span class="popup-star s2" aria-hidden="true">✦</span><span class="popup-star s3" aria-hidden="true">✧</span>
+      <span class="popup-heart h1" aria-hidden="true">♡</span><span class="popup-heart h2" aria-hidden="true">♡</span>
+      <div class="grinch-art" id="popupArt" role="img" aria-label="Гринч с подарком"></div>
+      <div class="popup-copy"><span class="popup-tag" id="popupTag"></span><span class="gift-emoji" id="popupIcon" aria-hidden="true"></span><h2 id="popupTitle"></h2><p id="popupText"></p></div>
+      <button type="button" class="popup-button" id="okay"></button>
+      <button type="button" class="restart-link" id="restart" hidden>Начать новую историю</button>
+    </section>
+  </div>
+  <noscript><div class="noscript">Чтобы открыть окошки, включи JavaScript в браузере.</div></noscript>
+  <script>/* INLINE_GAME */</script>
+</body>
+</html>
