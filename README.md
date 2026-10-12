@@ -1,29 +1,39 @@
 # Grinchmas
 
-Готовый календарь — **index.html**. Все иллюстрации, шрифты, стили и логика встроены в этот файл; его можно открыть в обычном браузере или разместить на статическом хостинге. Интернет для работы календаря не нужен. Исходное вложение пользователя сохранено отдельно и не изменено.
+The finished calendar is **index.html**. All illustrations, fonts, styles and game logic are embedded in this one file. Open it in a browser or put it on a static host; the calendar does not need external assets or an internet connection. The original uploaded file is preserved separately.
 
-## Поведение
+## Playing together
 
-- 40 окошек; после закрытия попапа все снова выглядят закрытыми. Счётчиков, прогресс-бара, отметок об открытии и признаков заблокированных карточек нет.
-- Три случайно выбранные дверцы никогда не распахиваются. При нажатии они светятся и вызывают тот же механизм выдачи подарков. Призы к этим дверцам не привязаны и не теряются.
-- Сохранены все 34 реальных подарка из исходника, включая повторы. Как и в исходнике, перемешиваются только обычные физические подарки между их исходными позициями.
-- Три проделки Гринча — дополнительные сцены перед реальным подарком. Приз резервируется вместе с шуткой; кнопка в попапе показывает его. Закрытие шутки не уничтожает приз: он останется в том же окошке.
-- Новое выбранное окошко получает следующий подарок из очереди. Повторное нажатие показывает его прежний подарок. Когда очередь распределена, другие окошки показывают письмо Гринча без счётчиков и объявления об окончании. Число подарков не увеличивалось: календарь распределяет исходный список, а не создаёт дополнительные призы.
-- История хранится в `localStorage` текущего браузера. Это календарь для игры на одном устройстве, не общая база участников между разными устройствами. Вкладки одного сайта согласуют выдачу через Web Locks. Если хранилище недоступно, игра работает в памяти и предупреждает об этом.
-- «Как играть» → «Начать новую историю» → подтверждение запускает новую игру. На узком экране инструкции доступны по пункту «Календарь». Звук включается только по кнопке.
+Take turns on **one shared device and browser**. Pick any unopened window. Once opened, a window stays visibly open, displays its result and is disabled for everyone using that browser, including after a reload. There are no gift counters or progress bars.
 
-## Разработка
+A losing window displays the Grinch and a **Try another window** button. The button closes the popup; the player then picks another unopened window themselves. The losing window stays open and disabled. A loss does not consume or automatically reserve the next real gift.
 
-Редактировать `src/index.template.html`, `src/style.css` и `src/game.js`. Иллюстрации и локальные шрифты находятся в `assets/`; лицензии шрифтов сохранены рядом. Изображения сгенерированы для этого календаря по предоставленному образцу. Иллюстрации попапов — атлас 4×4, который показывается через CSS без внешних запросов.
+The original inventory contains 34 real gifts, including duplicates, and three losing events. Only the ordinary physical gifts shuffle among their original positions. Each new window receives the next event from the queue. All real gifts remain available regardless of which window numbers are chosen. After every event has been revealed, three unassigned mystery windows remain closed and display a note from the Grinch if clicked; they do not contain additional prizes.
+
+The interface, popup captions, buttons, accessibility labels and notices are all in English. Every popup includes a themed Grinch illustration.
+
+## Saved games
+
+- Progress is saved in this browser's `localStorage`. Other tabs on the same origin update automatically. Web Locks prevent simultaneous clicks in those tabs from awarding the same window twice.
+- This is a shared-device calendar, not a server-backed game that synchronizes different phones or browsers. Use the same browser and URL throughout the event.
+- Existing version 4 games upgrade automatically. Previously awarded gifts stay assigned to their original windows and become visibly open. Pranks that were already bundled with those gifts are not issued again. The legacy save remains available as a backup.
+- If browser storage is blocked, the calendar keeps its state in the current tab and displays an English notice. Keep the tab open in that case.
+- **How to play → Start a new story → confirmation** clears the current game and closes all windows. On a small screen, tap **Advent Calendar** to open the instructions. Sound is off until enabled explicitly.
+
+## Development
+
+Edit `src/index.template.html`, `src/style.css` and `src/game.js`, then rebuild:
 
 ```sh
 python3 build.py
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-Для изменения только оформления достаточно пересобрать один HTML командой `python3 build.py`. Используйте имеющийся checkout; облачные задачи уже изолированы, дополнительный Git worktree не требуется.
+The illustrations and local fonts are in `assets/`, along with the font licenses. The illustrations were generated for this calendar using the supplied visual reference. Popup art uses a 4×4 atlas rendered with CSS.
 
-## Проверки
+Use the existing checkout. Cloud tasks already run in isolation; an additional Git worktree is unnecessary.
+
+## Checks
 
 ```sh
 npm ci
@@ -32,6 +42,6 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Если в системе уже установлен Chromium, тест использует `/usr/bin/chromium`; другой путь задаётся через `CHROMIUM_PATH`. Браузерная проверка сама поднимает и останавливает временный HTTP-сервер.
+The browser test uses `/usr/bin/chromium` if installed, or Playwright's browser otherwise. Set `CHROMIUM_PATH` to use another executable. The test starts and stops its own temporary HTTP server.
 
-Проверяются сохранение всего списка подарков при разных порядках выбора, повторные нажатия, резервирование подарка при шутке, восстановление после перезагрузки, все попапы, мобильная и горизонтальная вёрстка, клавиатура, две одновременно открытые вкладки и работа без сетевых ресурсов.
+Coverage includes the complete gift inventory across different window orders, permanent opened states, disabled repeat picks, losses followed by a fresh pick, migration of existing saves, reloads, concurrent same-window picks, tab synchronization, every popup at six viewport sizes, keyboard access and offline operation.

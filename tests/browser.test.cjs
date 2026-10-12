@@ -3,10 +3,11 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const {chromium} = require('playwright');
-const {original, createSession, packetsFor} = require('../src/game.js');
+const {original, createSession} = require('../src/game.js');
 
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
-const KEY = 'grinchmas.calendar.v4';
+const KEY = 'grinchmas.calendar.v5';
+const LEGACY_KEY = 'grinchmas.calendar.v4';
 const clean = name => name.replace(/\s*🔥/gu, '').trim();
 let browser;
 const server = http.createServer((req, res) => {res.setHeader('Content-Type', 'text/html; charset=utf-8');res.end(html);});
@@ -24,46 +25,56 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
   page.on('request', req => {if (/^https?:/.test(req.url())) network.push(req.url());});
   await page.goto(url);
   await page.evaluate(() => document.fonts.ready);
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  assert.ok(!/[А-Яа-яЁё]/u.test(html), 'The complete standalone calendar must be in English.');
   assert.equal(await page.locator('.door').count(), 40);
-  const pristine = await page.locator('#calendar').innerHTML();
   const session = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), KEY);
-  const packets = packetsFor(session.order);
   const observed = [];
   let tricks = 0;
   for (let day = 1; day <= 40; day++) {
     await page.locator('#door-' + day).click();
     await page.locator('#overlay').waitFor({state:'visible'});
-    if (await page.locator('#popup').evaluate(el => el.classList.contains('trick'))) {
-      tricks++;
-      await page.locator('#okay').click();
-      await page.waitForFunction(() => !document.getElementById('popup').classList.contains('trick'));
-    }
+    const isTrick = await page.locator('#popup').evaluate(el => el.classList.contains('trick'));
     const title = await page.locator('#popupTitle').innerText();
-    if (day <= packets.length) {
-      assert.equal(title, clean(original[packets[day - 1].giftId][1]));
-      observed.push(title);
+    if (day <= original.length) {
+      const gift = original[session.order[day - 1]];
+      assert.equal(title, clean(gift[1]));
+      assert.equal(await page.locator('#door-' + day).isDisabled(), true);
+      assert.ok(await page.locator('#door-' + day).evaluate(el => el.classList.contains('opened')));
+      if (isTrick) tricks++;
+      else observed.push(title);
     }
-    assert.ok((await page.locator('#popupArt').getAttribute('aria-label')).includes('Гринч'));
+    assert.ok((await page.locator('#popupArt').getAttribute('aria-label')).includes('Grinch'));
     assert.ok(await page.locator('#popupArt').evaluate(el => getComputedStyle(el).backgroundImage.startsWith('url("data:image/png')));
     assert.ok(await page.locator('#popup').evaluate(el => {
       const copy = el.querySelector('.popup-copy'), button = el.querySelector('.popup-button');
       return copy.offsetTop + copy.offsetHeight < button.offsetTop;
     }));
-    await page.keyboard.press('Escape');
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'door-' + day);
+    const beforeClose = await page.evaluate(key => localStorage.getItem(key), KEY);
+    if (isTrick) {
+      assert.equal(await page.locator('#okay').innerText(), 'Try another window');
+      await page.locator('#okay').click();
+    } else await page.keyboard.press('Escape');
+    await page.locator('#overlay').waitFor({state:'hidden'});
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), beforeClose, 'Closing a loss must not reserve another prize.');
+    assert.equal(await page.evaluate(() => document.activeElement.disabled), false);
+    if (day === 8) await page.screenshot({path:'/tmp/grinch-opened-desktop.png'});
   }
   assert.equal(tricks, 3);
   assert.equal(observed.length, 34);
-  assert.equal(await page.locator('#calendar').innerHTML(), pristine);
-  assert.equal(await page.locator('[role="progressbar"], .sealed, .opened, [aria-disabled="true"]').count(), 0);
-  console.log('PASS: all 40 windows, 34 gifts and 3 pranks; Grinch in every popup, no permanent reveal markers.');
+  assert.equal(await page.locator('.door.opened:disabled').count(), 37);
+  assert.equal(await page.locator('.door:not(.opened):not(:disabled)').count(), 3);
+  assert.equal(await page.locator('[role="progressbar"], .counter, .sealed').count(), 0);
+  console.log('PASS: all prizes and losses; opened doors remain open and disabled; losses require a new pick; English throughout.');
 
   const saved = await page.evaluate(key => localStorage.getItem(key), KEY);
   await page.reload();
-  await page.locator('#door-5').click();
-  await page.locator('#overlay').waitFor({state:'visible'});
-  assert.equal(await page.locator('#popupTitle').innerText(), 'SPA');
+  assert.equal(await page.locator('.door.opened:disabled').count(), 37);
+  assert.equal(await page.locator('#door-5 .opened-gift').innerText(), 'SPA');
+  await page.locator('#door-5').evaluate(button => button.click());
+  assert.equal(await page.locator('#overlay').isVisible(), false);
   assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), saved);
+  await page.locator('#grinchNote').click();
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'close');
   await page.keyboard.press('Shift+Tab');
@@ -73,7 +84,7 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
   assert.equal(await page.locator('#home').evaluate(el => el.inert), true);
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#home').evaluate(el => el.inert), false);
-  console.log('PASS: reload preserves gifts; focus is trapped and restored; Escape closes the dialog.');
+  console.log('PASS: opened state survives reload; disabled windows cannot reopen; keyboard and focus work.');
 
   await page.locator('#howTo').click();
   await page.locator('#restart').click();
@@ -84,9 +95,9 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
   await page.locator('#okay').click();
   await page.locator('#overlay').waitFor({state:'hidden'});
   assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).claims, KEY), {});
-  console.log('PASS: resetting requires confirmation; cancelling preserves the game.');
+  assert.equal(await page.locator('.door.opened, .door:disabled').count(), 0);
+  console.log('PASS: only a confirmed new game closes and re-enables the windows.');
 
-  // Seed a known, unshuffled session to inspect the longest titles at each viewport.
   const demo = createSession(() => .5);
   demo.order = original.map((_, i) => i);
   const viewportList = [{width:320,height:568},{width:390,height:844},{width:768,height:1024},{width:1440,height:900},{width:1672,height:941},{width:844,height:390}];
@@ -96,44 +107,61 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
     await page.reload();
     await page.evaluate(() => document.fonts.ready);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), JSON.stringify(viewport));
-    for (let day = 1; day <= 12; day++) {
+    for (let day = 1; day <= original.length; day++) {
       await page.locator('#door-' + day).click();
       await page.locator('#overlay').waitFor({state:'visible'});
-      if (await page.locator('#popup').evaluate(el => el.classList.contains('trick'))) {
-        await page.locator('#okay').click();
-        await page.waitForFunction(() => !document.getElementById('popup').classList.contains('trick'));
-      }
       assert.ok(await page.locator('#popup').evaluate(el => {
         const copy = el.querySelector('.popup-copy'), button = el.querySelector('.popup-button');
         return copy.offsetTop + copy.offsetHeight <= button.offsetTop && button.scrollWidth <= button.clientWidth + 2;
       }), `Popup layout: ${viewport.width}px, day ${day}`);
+      if (viewport.width === 390 && day === 7) await page.screenshot({path:'/tmp/grinch-english-loss-mobile.png'});
       await page.locator('#okay').click();
+      if (viewport.width === 390 && day === 8) await page.screenshot({path:'/tmp/grinch-opened-mobile.png',fullPage:true});
     }
   }
-  console.log('PASS: mobile, tablet, desktop and landscape layouts; all tested titles fit above the button.');
+  console.log('PASS: every English gift and loss popup fits mobile, tablet, desktop and landscape layouts.');
 
   await page.setViewportSize({width:1440,height:900});
   await page.evaluate(({key,demo}) => localStorage.setItem(key,JSON.stringify(demo)), {key:KEY,demo});
   await page.reload();
   const page2 = await context.newPage();
   await page2.goto(url);
-  await Promise.all([page.locator('#door-1').click(),page2.locator('#door-2').click()]);
-  await Promise.all([page.locator('#overlay').waitFor({state:'visible'}),page2.locator('#overlay').waitFor({state:'visible'})]);
-  const claims = await page.evaluate(key => JSON.parse(localStorage.getItem(key)).claims, KEY);
-  assert.deepEqual(Object.values(claims).sort(), [0,1]);
+  await Promise.all([page.locator('#door-1').evaluate(el=>el.click()),page2.locator('#door-1').evaluate(el=>el.click())]);
+  await Promise.all([page,page2].map(p=>p.waitForFunction(()=>document.getElementById('door-1').disabled)));
+  assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).claims, KEY), {'1':0});
+  const openDialogs = Number(await page.locator('#overlay').isVisible()) + Number(await page2.locator('#overlay').isVisible());
+  assert.equal(openDialogs,1);
+  for(const p of [page,page2]) if(await p.locator('#overlay').isVisible()) await p.keyboard.press('Escape');
+  await page.locator('#door-2').click();
+  await page.locator('#overlay').waitFor({state:'visible'});
+  await page2.waitForFunction(()=>document.getElementById('door-2').disabled);
+  assert.equal(await page2.locator('#door-2').getAttribute('aria-label'), await page.locator('#door-2').getAttribute('aria-label'));
   await page2.close(); await page.keyboard.press('Escape');
-  console.log('PASS: two tabs reserve distinct prizes under concurrent clicks.');
+  console.log('PASS: simultaneous picks of the same door award once; other tabs update their opened windows.');
+
+  const old={version:4,order:original.map((_,i)=>i),claims:Object.fromEntries(Array.from({length:8},(_,i)=>[i+1,i])),stillDoors:[5,20,32],seenTeases:{},sound:false};
+  const migrationContext=await browser.newContext({reducedMotion:'reduce'});
+  await migrationContext.addInitScript(({key,state})=>localStorage.setItem(key,JSON.stringify(state)),{key:LEGACY_KEY,state:old});
+  const migrationPage=await migrationContext.newPage();
+  await migrationPage.goto(url);
+  assert.equal(await migrationPage.locator('.door.opened:disabled').count(),8);
+  assert.equal(await migrationPage.locator('#door-7 .opened-gift').innerText(),'Nintendo Switch 2');
+  const migrated=await migrationPage.evaluate(key=>JSON.parse(localStorage.getItem(key)),KEY);
+  assert.deepEqual(migrated.retired,[6]);
+  await migrationPage.locator('#door-9').click();
+  await migrationPage.locator('#overlay').waitFor({state:'visible'});
+  assert.equal(await migrationPage.locator('#popupTitle').innerText(),'Oral-B iO Series 6');
+  console.log('PASS: old games migrate without resetting already awarded gifts.');
 
   const initialRequests = network.length;
   await context.setOffline(true);
-  // Re-render the standalone HTML with the network unavailable. All art and fonts are embedded.
   await page.setContent(html, {waitUntil:'load'});
   await page.evaluate(() => document.fonts.ready);
   await page.locator('#door-5').click();
   await page.locator('#overlay').waitFor({state:'visible'});
   assert.equal(network.length, initialRequests);
   assert.ok(await page.locator('#home').evaluate(el => getComputedStyle(el).backgroundImage.startsWith('url("data:image/png')));
-  console.log('PASS: self-contained HTML renders and works offline with no external asset requests.');
+  console.log('PASS: standalone HTML works without external asset requests.');
 
   const privateContext = await browser.newContext({reducedMotion:'reduce'});
   await privateContext.addInitScript(() => Object.defineProperty(window, 'localStorage', {get() {throw new DOMException('Storage disabled', 'SecurityError');}}));
@@ -143,7 +171,9 @@ const server = http.createServer((req, res) => {res.setHeader('Content-Type', 't
   await privatePage.locator('#overlay').waitFor({state:'visible'});
   assert.equal(await privatePage.locator('#popupTitle').innerText(), 'Ambiente');
   assert.equal(await privatePage.locator('#storageNotice').isVisible(), true);
-  console.log('PASS: storage-disabled browsers still play, with an honest persistence notice.');
+  await privatePage.locator('#close').click();
+  assert.equal(await privatePage.locator('#door-1').isDisabled(),true);
+  console.log('PASS: storage-disabled browsers keep opened windows for the current tab and explain the limitation.');
   assert.deepEqual(errors, []);
   console.log('PASS: no JavaScript errors.');
 })().catch(error => {console.error(error);process.exitCode=1;}).finally(async () => {if(browser)await browser.close();server.close();});

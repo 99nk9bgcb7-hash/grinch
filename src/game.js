@@ -6,25 +6,26 @@
     ['🍽️','Ambiente','voucher'], ['🎧','AirPods 5','physical'],
     ['🔋','Alza','voucher'], ['☕','Nespresso De’Longhi','physical'],
     ['🧖‍♀️','SPA','spa'], ['🍟','Tefal Easy Fry & Grill','physical'],
-    ['😈','Гринч стащил подарок!','trick'], ['🎮','Nintendo Switch 2 🔥','super'],
+    ['😈','YOU LOSE!','trick'], ['🎮','Nintendo Switch 2 🔥','super'],
     ['💅','Sephora','beauty'], ['🦷','Oral-B iO Series 6','physical'],
     ['💶','MONEY','special'], ['🧳','American Tourister Airconic','physical'],
     ['🛍️','Shopping','voucher'], ['🟧','SURPRISE 🔥','super'],
     ['🍽️','Ambiente','voucher'], ['🧹','Dyson V8 Cyclone 2026 🔥','super'],
     ['🔋','Alza','voucher'], ['🧖‍♀️','SPA','spa'],
-    ['😈','Гринч стащил подарок!','trick'], ['🔥','Tefal OptiGrill+','physical'],
+    ['😈','YOU LOSE!','trick'], ['🔥','Tefal OptiGrill+','physical'],
     ['🍽️','Michelin Restaurant 🔥','super'], ['🛍️','Shopping','voucher'],
     ['🌬️','Mini fan Dyson','physical'], ['🧖‍♀️','SPA','spa'],
     ['🎟️','Rituals','voucher'], ['🟧','SURPRISE 🔥','super'],
-    ['💅','Sephora','beauty'], ['😈','Рассмеши Гринча','trick'],
+    ['💅','Sephora','beauty'], ['😈','MAKE ME LAUGH!','trick'],
     ['🍽️','Ambiente','voucher'], ['🛍️','Shopping','voucher'],
     ['🎧','AirPods 5','physical'], ['🧖‍♀️','SPA','spa'],
     ['📱','iPhone 18 Pro 🔥🔥','super'], ['💅','Sephora','beauty'],
     ['🛍️','Shopping','voucher'], ['🍽️','Ambiente','voucher'],
     ['📱','iPad 11 🔥🔥','super']
   ];
-  const KEY = 'grinchmas.calendar.v4';
-  const VERSION = 4;
+  const KEY = 'grinchmas.calendar.v5';
+  const LEGACY_KEY = 'grinchmas.calendar.v4';
+  const VERSION = 5;
   const physicalSlots = original.map((gift, i) => gift[2] === 'physical' ? i : -1).filter(i => i >= 0);
   function shuffled(items, rng = Math.random) {
     const result = items.slice();
@@ -39,13 +40,11 @@
     const physical = shuffled(physicalSlots, rng);
     physicalSlots.forEach((slot, i) => { order[slot] = physical[i]; });
     return {
-      version: VERSION, order,
-      // These leaves never swing, but every window can still receive a prize.
-      stillDoors: shuffled(Array.from({length: 40}, (_, i) => i + 1), rng).slice(0, 3),
-      claims: {}, seenTeases: {}, sound: false
+      version: VERSION, order, claims: {}, retired: [], sound: false
     };
   }
-  function packetsFor(order) {
+  // Version 4 bundled each prank with the following gift. Used only to migrate saved games.
+  function legacyPackets(order) {
     const packets = [];
     let tease = null;
     for (const giftId of order) {
@@ -55,34 +54,58 @@
     }
     return packets;
   }
-  function validSession(value) {
-    if (!value || value.version !== VERSION || typeof value.sound !== 'boolean') return false;
+  function validOrder(value) {
+    if (!value || typeof value.sound !== 'boolean') return false;
     if (!Array.isArray(value.order) || value.order.length !== original.length || new Set(value.order).size !== original.length) return false;
     if (value.order.some((id, slot) => !Number.isInteger(id) || id < 0 || id >= original.length || (physicalSlots.includes(slot) ? !physicalSlots.includes(id) : id !== slot))) return false;
+    if (!value.claims || Array.isArray(value.claims) || typeof value.claims !== 'object') return false;
+    return !Object.keys(value.claims).some(day => !/^(?:[1-9]|[1-3][0-9]|40)$/.test(day));
+  }
+  function validLegacy(value) {
+    if (!validOrder(value) || value.version !== 4) return false;
     if (!Array.isArray(value.stillDoors) || value.stillDoors.length !== 3 || new Set(value.stillDoors).size !== 3 || value.stillDoors.some(n => !Number.isInteger(n) || n < 1 || n > 40)) return false;
-    if (!value.claims || Array.isArray(value.claims) || typeof value.claims !== 'object' || !value.seenTeases || typeof value.seenTeases !== 'object' || Array.isArray(value.seenTeases)) return false;
-    if (Object.keys(value.claims).some(day => !/^(?:[1-9]|[1-3][0-9]|40)$/.test(day))) return false;
+    if (!value.seenTeases || typeof value.seenTeases !== 'object' || Array.isArray(value.seenTeases)) return false;
     const assigned = Object.values(value.claims).filter(n => n !== null);
-    const packetCount = packetsFor(value.order).length;
+    const packetCount = legacyPackets(value.order).length;
     if (assigned.some(n => !Number.isInteger(n) || n < 0 || n >= packetCount) || new Set(assigned).size !== assigned.length) return false;
     assigned.sort((a, b) => a - b);
     if (assigned.some((n, i) => n !== i)) return false;
     if (Object.values(value.claims).includes(null) && assigned.length !== packetCount) return false;
     return Object.entries(value.seenTeases).every(([day, seen]) => Object.hasOwn(value.claims, day) && seen === true);
   }
+  function validSession(value) {
+    if (!validOrder(value) || value.version !== VERSION || !Array.isArray(value.retired)) return false;
+    if (value.retired.some(index => !Number.isInteger(index) || index < 0 || index >= original.length || original[value.order[index]][2] !== 'trick')) return false;
+    const consumed = [...Object.values(value.claims), ...value.retired];
+    if (consumed.some(index => !Number.isInteger(index) || index < 0 || index >= original.length) || new Set(consumed).size !== consumed.length) return false;
+    return consumed.sort((a, b) => a - b).every((index, i) => index === i);
+  }
+  function migrateSession(value) {
+    if (validSession(value)) return value;
+    if (!validLegacy(value)) return null;
+    const session = {version: VERSION, order: value.order.slice(), claims: {}, retired: [], sound: value.sound};
+    const packets = legacyPackets(value.order);
+    for (const [day, index] of Object.entries(value.claims)) {
+      if (index === null) continue; // A letter was not a prize or an opened window.
+      const packet = packets[index];
+      session.claims[day] = value.order.indexOf(packet.giftId);
+      if (packet.tease !== null) session.retired.push(value.order.indexOf(packet.tease));
+    }
+    return validSession(session) ? session : null;
+  }
   function claimWindow(session, day) {
     if (!Number.isInteger(day) || day < 1 || day > 40) throw new RangeError('Invalid window');
-    const packets = packetsFor(session.order);
-    if (!Object.hasOwn(session.claims, day)) {
-      const next = Object.values(session.claims).filter(n => n !== null).length;
-      session.claims[day] = next < packets.length ? next : null;
-    }
-    const index = session.claims[day];
-    return index === null ? null : packets[index];
+    if (Object.hasOwn(session.claims, day)) return {kind: 'already-open'};
+    const next = Object.keys(session.claims).length + session.retired.length;
+    // The final unassigned windows stay closed; no prize is hidden behind them.
+    if (next >= session.order.length) return {kind: 'mystery'};
+    session.claims[day] = next;
+    const giftId = session.order[next];
+    return {kind: original[giftId][2] === 'trick' ? 'trick' : 'gift', giftId};
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {original, physicalSlots, createSession, packetsFor, validSession, claimWindow};
+    module.exports = {original, physicalSlots, createSession, validSession, migrateSession, claimWindow};
   }
   if (typeof document === 'undefined') return;
 
@@ -92,37 +115,37 @@
   let state, memoryOnly = false, busy = false, openingTimer = null, activeDoor = null, returnFocus = null, nextAction = null;
   let audioContext = null;
   const descriptions = {
-    'Ambiente': [0, 'Ужин без компромиссов', 'На ужин — ты. В меню — всё, кроме моего терпения.', 'Столик на моё имя'],
-    'AirPods 5': [1, 'Режим: не беспокоить', 'Чтобы не слышать «ну что, как дела?». Одобрено Гринчем.', 'Включаю свой вайб'],
-    'Alza': [2, 'Техника на твоей стороне', 'Купи что-нибудь умное. В этой компании должен быть хоть кто-то.', 'Добавляю в корзину'],
-    'Nespresso De’Longhi': [3, 'Утро станет добрее. Может быть.', 'Пока нет кофе — я злой. После кофе — злой, но бодрый.', 'Мне двойной, пожалуйста'],
-    'SPA': [4, 'Do not disturb, darling', 'Лицо — в огурцах. Дела — в игноре. Вот это я понимаю: планы.', 'Ухожу в халат'],
-    'Tefal Easy Fry & Grill': [5, 'Хрустящий аргумент', 'Картошка будет горячей. Ответы бывшим — холодными.', 'Хрусти, не грусти'],
-    'Nintendo Switch 2': [7, 'Player one, это ты', 'Спасай принцессу. Меня от людей уже не спасти.', 'Ушёл спасать мир'],
-    'Sephora': [8, 'Grinch glam club', 'Характер не исправим. Зато хайлайтер подберём.', 'Красота — страшная сила'],
-    'Oral-B iO Series 6': [9, 'Улыбка с подвохом', 'Улыбайся шире. Пусть думают, что ты добрый.', 'Ослеплю всех'],
-    'MONEY': [10, 'Очень убедительный подарок', 'Счастье не купить. Но чек я бы всё-таки сохранил.', 'Такая зелень мне нравится'],
-    'American Tourister Airconic': [11, 'Багаж хорошего настроения', 'Собирай вещи. Особенно если в планах — подальше от всех.', 'Такси в аэропорт!'],
-    'Shopping': [12, 'Retail therapy, baby', '«Мне ничего не нужно» — отличное начало шопинга.', 'Беру. И это тоже.'],
-    'SURPRISE': [13, 'Секрет даже от Санты', 'Я сам упаковывал. Что внутри — уже забыл. Интрига!', 'Обожаю подозрительные коробки'],
-    'Dyson V8 Cyclone 2026': [14, 'Пыль, у тебя проблемы', 'Собирает пыль. И остатки желания убираться вручную.', 'Порядок без переговоров'],
-    'Tefal OptiGrill+': [5, 'Прожарка от Гринча', 'Жарь стейки. Не нервы. Последнее оставь мне.', 'Мне medium grinch'],
-    'Michelin Restaurant': [0, 'Очень высокая кухня', 'Веди себя прилично. Хотя бы между подачами.', 'Дресс-код: великолепие'],
-    'Mini fan Dyson': [2, 'Cool по всем параметрам', 'Холодный взгляд — мой. Свежий ветер — твой.', 'Слишком cool для суеты'],
-    'Rituals': [4, 'Твой личный ритуал', 'Зажги свечу. Выключи суету. Всех остальных — в беззвучный.', 'Меня сегодня нет'],
-    'iPhone 18 Pro': [15, 'Алло, это роскошь', 'Для фото ёлки, еды и лица «я этого заслуживаю».', 'Сначала селфи со мной'],
-    'iPad 11': [15, 'Масштаб твоих планов', 'Большой экран для маленьких «ещё одну серию».', 'Ещё одну. Последнюю.']
+    'Ambiente': [0, 'Dinner with a side of attitude', 'Order anything. My patience is not on the menu.', 'A table for fabulous, please'],
+    'AirPods 5': [1, 'Do not disturb: upgraded', 'For tuning out small talk. And people. Mostly people.', 'Less chatter. More music.'],
+    'Alza': [2, 'A very smart move', 'Buy something smart. Someone around here should be.', 'Add to cart. Obviously.'],
+    'Nespresso De’Longhi': [3, 'Espresso your inner Grinch', 'Before coffee: grumpy. After coffee: grumpy, but faster.', 'Make mine a double'],
+    'SPA': [4, 'Do not disturb, darling', 'Cucumbers on. Responsibilities off. Finally, a proper plan.', 'Robes before responsibilities'],
+    'Tefal Easy Fry & Grill': [5, 'Hot fries. Cold replies.', 'Keep your fries crispy and your replies to your ex ice-cold.', 'Crispy is a personality'],
+    'Nintendo Switch 2': [7, 'Player one: you', 'Go save the princess. Nobody can save me from small talk.', 'Reality can wait'],
+    'Sephora': [8, 'Grinch glam club', 'We cannot fix your attitude. We can match your highlighter.', 'Pretty. Petty. Perfect.'],
+    'Oral-B iO Series 6': [9, 'A suspiciously good smile', 'Smile wider. Let them think you are the nice one.', 'Dazzle, then disappear'],
+    'MONEY': [10, 'An extremely convincing gift', 'Money cannot buy happiness. Still, keep the receipt.', 'My favourite shade of green'],
+    'American Tourister Airconic': [11, 'Emotional baggage sold separately', 'Pack your bags. Preferably for somewhere with fewer people.', 'One ticket out of here'],
+    'Shopping': [12, 'Retail therapy, baby', '“I do not need anything” is how every great shopping trip begins.', 'This. And this. And that.'],
+    'SURPRISE': [13, 'Even Santa has no idea', 'I wrapped it myself. Forgot what is inside. Very exclusive.', 'Suspicious boxes? Love them.'],
+    'Dyson V8 Cyclone 2026': [14, 'Dust, your days are numbered', 'Picks up dust. And the last of your excuses for not cleaning.', 'Clean floor. Dirty look.'],
+    'Tefal OptiGrill+': [5, 'A proper Grinch roasting', 'Grill the steaks. Leave roasting people to me.', 'Make mine medium Grinch'],
+    'Michelin Restaurant': [0, 'Excellent taste. Questionable manners.', 'Try to behave. At least between courses.', 'Dress code: magnificent'],
+    'Mini fan Dyson': [2, 'Too cool for the nonsense', 'The cold stare is mine. The cool breeze is yours.', 'Cool, calm, unavailable'],
+    'Rituals': [4, 'Your very own quiet luxury', 'Light a candle. Silence the chaos. Put everyone else on mute.', 'Unavailable. Blissfully.'],
+    'iPhone 18 Pro': [15, 'Hello, is this luxury?', 'For pictures of the tree, your dinner, and your “I deserve this” face.', 'First, a selfie with me'],
+    'iPad 11': [15, 'Big screen. Tiny commitments.', 'A bigger screen for your very small “just one more episode”.', 'One more. The last one.']
   };
   const artLabels = [
-    'Гринч в смокинге за праздничным ужином', 'Гринч с белыми беспроводными наушниками',
-    'Гринч с гаджетами и маленьким вентилятором', 'Гринч пьёт эспрессо у кофемашины',
-    'Гринч в розовом халате и тюрбане, с огурцами на глазах, свечами и бокалом',
-    'Гринч-повар с картошкой фри и грилем', 'Хитрый Гринч обнимает украденный подарок',
-    'Гринч играет на портативной игровой консоли', 'Гринч с косметикой в розовых очках',
-    'Гринч чистит зубы электрической щёткой', 'Гринч держит веер денежных купюр',
-    'Гринч с бирюзовым чемоданом и посадочным талоном', 'Гринч несёт розовые пакеты с покупками',
-    'Гринч открывает сияющую подарочную коробку', 'Гринч убирается беспроводным пылесосом',
-    'Гринч с оранжевым телефоном и планшетом'
+    'The Grinch in a tuxedo enjoying a festive dinner', 'The Grinch wearing white wireless earbuds',
+    'The Grinch holding gadgets and a small electric fan', 'The Grinch drinking espresso beside a coffee machine',
+    'The Grinch in a pink spa robe and towel, with cucumber slices, candles and champagne',
+    'The Grinch as a chef with fries and a grill', 'A mischievous Grinch hugging a stolen Christmas gift',
+    'The Grinch playing a handheld games console', 'The Grinch with makeup and pink sunglasses',
+    'The Grinch brushing his teeth with an electric toothbrush', 'The Grinch holding a fan of banknotes',
+    'The Grinch with a turquoise suitcase and a boarding pass', 'The Grinch carrying pink shopping bags',
+    'The Grinch opening a glowing gift box', 'The Grinch cleaning with a cordless vacuum',
+    'The Grinch holding an orange phone and a tablet'
   ];
   const looks = [
     'green heart','cream ribbon bow','green bauble','cream holly','green bow','green cane','cream star','red neon','green holly','red star',
@@ -134,10 +157,9 @@
   function readStored() {
     if (memoryOnly) return null;
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY);
       if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return validSession(parsed) ? parsed : null;
+      return migrateSession(JSON.parse(raw));
     } catch {
       memoryOnly = true;
       $('storageNotice').hidden = false;
@@ -167,7 +189,7 @@
       door.type = 'button';
       door.className = 'door ' + style.split(' ')[0] + (style.includes('gold-bauble') ? ' gold-bauble' : '');
       door.id = 'door-' + day;
-      door.setAttribute('aria-label', 'Окошко ' + day);
+      door.setAttribute('aria-label', 'Open window ' + day);
       let decor = symbol('snow', 'snowcap') + '<span class="hinge"></span><span class="hinge lower"></span>';
       if (style.includes('ribbon')) decor += '<span class="ribbon-band"></span>';
       if (style.includes('wreath')) decor += '<span class="wreath"></span>';
@@ -181,6 +203,31 @@
       door.innerHTML = '<span class="door-frame" aria-hidden="true"></span><span class="door-leaf" aria-hidden="true">' + decor + '<span class="number">' + day + '</span><span class="knob"></span></span>';
       door.addEventListener('click', () => openDoor(day));
       calendar.append(door);
+    }
+  }
+  function renderOpenedWindows() {
+    for (let day = 1; day <= 40; day++) {
+      const door = $('door-' + day);
+      const opened = Object.hasOwn(state.claims, day);
+      door.classList.toggle('opened', opened);
+      door.disabled = opened;
+      const back = door.querySelector('.door-frame');
+      back.replaceChildren();
+      door.classList.remove('trick-reveal');
+      if (!opened) { door.setAttribute('aria-label', 'Open window ' + day); continue; }
+      const [icon, name, type] = original[state.order[state.claims[day]]];
+      door.classList.toggle('trick-reveal', type === 'trick');
+      door.setAttribute('aria-label', `Window ${day}: ${cleanName(name)}. Already opened.`);
+      for (const [className, text] of [
+        ['opened-number', String(day)],
+        ['opened-icon', icon],
+        ['opened-gift', type === 'trick' ? 'GRINCHED!' : cleanName(name)]
+      ]) {
+        const span = document.createElement('span');
+        span.className = className;
+        span.textContent = text;
+        back.append(span);
+      }
     }
   }
   function cleanName(name) { return name.replace(/\s*🔥/gu, '').trim(); }
@@ -227,42 +274,39 @@
     document.body.style.overflow = 'hidden';
     popup.focus({preventScroll: true});
   }
-  function showGift(packet) { showPopup(giftDetails(packet.giftId)); }
-  function showTease(packet, day) {
-    // The real gift was reserved atomically with this prank. Closing or reloading cannot lose it.
-    const laugh = packet.tease === 27;
-    showPopup({art: 6, icon: '😈', type: 'trick', tag: 'Гринч опять за своё',
-      title: laugh ? 'Ну-ка, рассмеши меня!' : 'Я стащил твой подарок!',
-      caption: laugh ? 'Ладно, твоё лицо уже справилось. Держи подарок, пока я снова не стал вредным.' : 'Потом вспомнил, что доставка обратно платная. Так уж и быть — забирай.',
-      button: laugh ? 'Ха-ха. А теперь подарок!' : 'Верни, зелёный!'
-    }, async () => {
-      await atomic(() => { refreshState(); state.seenTeases[day] = true; save(); });
-      showGift(packet);
-      chime();
+  function showGift(result) { showPopup(giftDetails(result.giftId)); }
+  function showTrick(result) {
+    const laugh = result.giftId === 27;
+    showPopup({art: 6, icon: '😈', type: 'trick', tag: 'The Grinch strikes again',
+      title: original[result.giftId][1],
+      caption: laugh ? 'Tell your worst joke. I could use a laugh. Then pick another unopened window — your gift is still out there.' : 'I stole this one. Shocking, I know. Pick another unopened window and try your luck again!',
+      button: 'Try another window'
     });
   }
   function showNote() {
-    showPopup({art: 6, icon: '💌', type: 'info', tag: 'Лично. Ворчливо. С любовью.', title: 'Только никому не говори…',
-      caption: 'Кажется, мне нравится дарить подарки. Ужасно неудобное чувство. Обнимаю. Но это между нами.', button: 'Твой секрет со мной'});
+    showPopup({art: 6, icon: '💌', type: 'info', tag: 'Personally. Grumpily. With love.', title: 'Do not tell anyone…',
+      caption: 'I think I like giving presents. A deeply inconvenient feeling. Sending hugs. But keep that between us.', button: 'Your secret is safe'});
   }
   async function openDoor(day) {
     if (busy || !overlay.hidden) return;
     busy = true;
     activeDoor = $('door-' + day);
     returnFocus = activeDoor;
-    let packet;
+    let result;
     try {
-      await atomic(() => { refreshState(); packet = claimWindow(state, day); save(); });
+      await atomic(() => { refreshState(); result = claimWindow(state, day); save(); });
     } catch {
-      packet = claimWindow(state, day); save();
+      result = claimWindow(state, day); save();
     }
-    activeDoor.classList.add(state.stillDoors.includes(day) ? 'summoning' : 'revealing');
+    renderOpenedWindows();
+    if (result.kind === 'already-open') { closePopup(); return; }
+    activeDoor.classList.add(result.kind === 'mystery' ? 'summoning' : 'revealing');
     chime();
     openingTimer = setTimeout(() => {
       openingTimer = null;
-      if (!packet) showNote();
-      else if (packet.tease !== null && !state.seenTeases[day]) showTease(packet, day);
-      else showGift(packet);
+      if (result.kind === 'mystery') showNote();
+      else if (result.kind === 'trick') showTrick(result);
+      else showGift(result);
     }, reducedMotion.matches ? 0 : 430);
   }
   function closePopup() {
@@ -271,19 +315,28 @@
     scene.inert = false;
     document.body.style.overflow = '';
     if (activeDoor) activeDoor.classList.remove('revealing', 'summoning');
+    renderOpenedWindows();
     activeDoor = null; busy = false; nextAction = null;
-    if (returnFocus && returnFocus.isConnected) returnFocus.focus({preventScroll: true});
+    if (returnFocus && returnFocus.isConnected) {
+      let target = returnFocus;
+      if (target.disabled) {
+        const day = Number(target.id.replace('door-', ''));
+        const available = [...calendar.querySelectorAll('.door:not(:disabled)')];
+        target = available.find(door => Number(door.id.replace('door-', '')) > day) || available[0] || calendar;
+      }
+      target.focus({preventScroll: true});
+    }
     returnFocus = null;
   }
   function showHowTo() {
     if (busy) return;
-    showPopup({art: 13, icon: '🎁', type: 'info', tag: 'Правила? Ну почти.', title: 'Тыкай. Удивляйся. Сияй.',
-      caption: 'Выбирай любое окошко. Дверцы любят секреты, а Гринч — эффектные появления. Если он шалит, жми розовую кнопку: подарок он всё равно отдаст.',
-      button: 'Ладно, зелёный, поехали', allowRestart: true});
+    showPopup({art: 13, icon: '🎁', type: 'info', tag: 'House rules. Grinch rules.', title: 'Pick. Open. Celebrate.',
+      caption: 'Take turns on this device. Pick any unopened window. Opened windows stay open and cannot be picked again. Got Grinched? Close the card and pick another window.',
+      button: 'Let the mischief begin', allowRestart: true});
   }
   function confirmRestart() {
-    showPopup({art: 6, icon: '🎀', type: 'info', tag: 'Начистоту, с чистого листа', title: 'Перепрячем подарки?',
-      caption: 'Начнётся новая игра: история подарков в этом браузере сотрётся. Если просто передумал — нажми крестик.', button: 'Да, начать заново'
+    showPopup({art: 6, icon: '🎀', type: 'info', tag: 'A fresh start. Same attitude.', title: 'Hide the gifts again?',
+      caption: 'This starts a new game and clears the opened windows on this device. Changed your mind? Just tap the close button.', button: 'Yes, start a new game'
     }, async () => {
       await atomic(() => { const sound = state.sound; state = createSession(); state.sound = sound; save(); });
       closePopup();
@@ -291,10 +344,10 @@
   }
   function updateSoundButton() {
     $('soundToggle').setAttribute('aria-pressed', String(state.sound));
-    $('soundToggle').setAttribute('aria-label', state.sound ? 'Выключить звук' : 'Включить звук');
+    $('soundToggle').setAttribute('aria-label', state.sound ? 'Turn sound off' : 'Turn sound on');
   }
 
-  renderDoors(); updateSoundButton();
+  renderDoors(); renderOpenedWindows(); updateSoundButton();
   $('okay').addEventListener('click', () => { if (nextAction) nextAction(); });
   $('close').addEventListener('click', closePopup);
   $('howTo').addEventListener('click', showHowTo);
@@ -319,7 +372,7 @@
     else if (!event.shiftKey && (document.activeElement === last || document.activeElement === popup)) { event.preventDefault(); first.focus(); }
   });
   window.addEventListener('storage', event => {
-    if (event.key === KEY) { refreshState(); updateSoundButton(); }
+    if (event.key === KEY) { refreshState(); renderOpenedWindows(); updateSoundButton(); }
   });
   if (!reducedMotion.matches) {
     for (let i = 0; i < 23; i++) {

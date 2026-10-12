@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#06291e">
-  <meta name="description" content="Немного магии, много характера. Рождественский календарь Гринча.">
+  <meta name="description" content="A little magic. A lot of attitude. The Grinch Christmas calendar.">
   <title>Grinchmas — In My Grinch Era</title>
   <style>/* INLINE_STYLES */</style>
 </head>
@@ -35,18 +35,18 @@
       <symbol id="sound" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4ZM15 8q4 4 0 8m3-11q7 7 0 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path class="sound-slash" d="m3 3 18 18" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
     </defs>
   </svg>
-  <a class="skip-link" href="#calendar">К окошкам</a>
+  <a class="skip-link" href="#calendar">Skip to the windows</a>
   <main class="scene" id="home">
     <header class="header">
-      <a class="brand" href="#home" aria-label="Grinchmas — на главную"><span class="santa-hat" aria-hidden="true"></span>Grinch<span>Mas</span></a>
-      <nav aria-label="Главная навигация">
-        <a class="nav-active" href="#calendar"><span aria-hidden="true">♥</span> Календарь</a>
-        <button type="button" id="howTo">Как играть</button>
-        <button type="button" id="grinchNote">От Гринча</button>
+      <a class="brand" href="#home" aria-label="Grinchmas — home"><span class="santa-hat" aria-hidden="true"></span>Grinch<span>Mas</span></a>
+      <nav aria-label="Main navigation">
+        <a class="nav-active" href="#calendar"><span aria-hidden="true">♥</span> Advent Calendar</a>
+        <button type="button" id="howTo">How to play</button>
+        <button type="button" id="grinchNote">From the Grinch</button>
       </nav>
       <div class="header-actions">
-        <button type="button" class="icon-button" id="soundToggle" aria-label="Включить звук" aria-pressed="false"><svg aria-hidden="true"><use href="#sound"/></svg></button>
-        <button type="button" class="icon-button" id="loveNote" aria-label="Письмо от Гринча"><svg aria-hidden="true"><use href="#heart"/></svg></button>
+        <button type="button" class="icon-button" id="soundToggle" aria-label="Turn sound on" aria-pressed="false"><svg aria-hidden="true"><use href="#sound"/></svg></button>
+        <button type="button" class="icon-button" id="loveNote" aria-label="A note from the Grinch"><svg aria-hidden="true"><use href="#heart"/></svg></button>
       </div>
     </header>
     <div class="era" aria-labelledby="mainTitle">
@@ -56,27 +56,27 @@
       <i aria-hidden="true"></i>
     </div>
     <div class="signposts" aria-hidden="true"><span>WHO-VILLE</span><span>GRINCH’S LAIR</span><span>GOOD GIFTS<br>BAD VIBES ♡</span></div>
-    <section class="calendar-shell" aria-label="Рождественский календарь">
-      <h2 class="sr-only">Выбери окошко — Гринч приготовил сюрприз</h2>
+    <section class="calendar-shell" aria-label="Christmas calendar">
+      <h2 class="sr-only">Pick a window — the Grinch has a surprise for you</h2>
       <div class="calendar" id="calendar" tabindex="-1"></div>
     </section>
-    <footer class="footer"><p>НЕМНОГО МАГИИ. МНОГО ХАРАКТЕРА.</p><span>Выбери окошко. Только не зли Гринча.</span><div aria-hidden="true">────── ♡ ──────</div></footer>
+    <footer class="footer"><p>A LITTLE MAGIC. A LOT OF ATTITUDE.</p><span>Pick a window. Try not to annoy the Grinch.</span><div aria-hidden="true">────── ♡ ──────</div></footer>
     <div class="snowfall" id="snowfall" aria-hidden="true"></div>
   </main>
-  <p id="storageNotice" class="storage-notice" role="status" hidden>Браузер не сохраняет историю. Оставь эту вкладку открытой, чтобы не потерять подарки.</p>
+  <p id="storageNotice" class="storage-notice" role="status" hidden>This browser cannot save your game. Keep this tab open so your opened windows are not lost.</p>
   <div class="overlay" id="overlay" hidden>
     <section class="popup" id="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle" aria-describedby="popupText" tabindex="-1">
       <svg class="popup-bow" aria-hidden="true"><use href="#pink-bow"/></svg>
-      <button type="button" class="popup-close" id="close" aria-label="Закрыть">×</button>
+      <button type="button" class="popup-close" id="close" aria-label="Close">×</button>
       <span class="popup-star s1" aria-hidden="true">✦</span><span class="popup-star s2" aria-hidden="true">✦</span><span class="popup-star s3" aria-hidden="true">✧</span>
       <span class="popup-heart h1" aria-hidden="true">♡</span><span class="popup-heart h2" aria-hidden="true">♡</span>
-      <div class="grinch-art" id="popupArt" role="img" aria-label="Гринч с подарком"></div>
+      <div class="grinch-art" id="popupArt" role="img" aria-label="The Grinch with a gift"></div>
       <div class="popup-copy"><span class="popup-tag" id="popupTag"></span><span class="gift-emoji" id="popupIcon" aria-hidden="true"></span><h2 id="popupTitle"></h2><p id="popupText"></p></div>
       <button type="button" class="popup-button" id="okay"></button>
-      <button type="button" class="restart-link" id="restart" hidden>Начать новую историю</button>
+      <button type="button" class="restart-link" id="restart" hidden>Start a new story</button>
     </section>
   </div>
-  <noscript><div class="noscript">Чтобы открыть окошки, включи JavaScript в браузере.</div></noscript>
+  <noscript><div class="noscript">Please enable JavaScript in your browser to open the windows.</div></noscript>
   <script>/* INLINE_GAME */</script>
 </body>
 </html>
