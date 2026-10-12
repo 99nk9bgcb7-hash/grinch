@@ -12,6 +12,7 @@ for token, name, mime in [
     ("SCENE_IMAGE", "whoville.png", "image/png"),
     ("GRINCH_ATLAS", "grinch-gifts.png", "image/png"),
     ("GRINCH_REVISED", "grinch-revised.png", "image/png"),
+    ("GRINCH_IPHONE", "grinch-iphone.png", "image/png"),
     ("CAVEAT_LATIN", "caveat-latin-700-normal.woff2", "font/woff2"),
     ("CAVEAT_CYRILLIC", "caveat-cyrillic-700-normal.woff2", "font/woff2"),
     ("CORMORANT", "cormorant-garamond-latin-600-normal.woff2", "font/woff2"),
