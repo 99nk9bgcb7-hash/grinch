@@ -267,9 +267,11 @@
     $('popupText').textContent = details.caption;
     $('popupIcon').textContent = details.icon;
     const revised = details.art >= 16, artIndex = revised ? details.art - 16 : details.art, columns = revised ? 2 : 4;
+    const phonePortrait = details.title === 'iPhone 18 Pro';
     $('popupArt').classList.toggle('revised-art', revised);
+    $('popupArt').classList.toggle('iphone-portrait', phonePortrait);
     $('popupArt').style.backgroundPosition = `${(artIndex % columns) * 100 / (columns - 1)}% ${Math.floor(artIndex / columns) * 100 / (columns - 1)}%`;
-    $('popupArt').setAttribute('aria-label', artLabels[details.art]);
+    $('popupArt').setAttribute('aria-label', phonePortrait ? 'The Grinch in a Santa hat holding an orange iPhone' : artLabels[details.art]);
     $('okay').textContent = details.button;
     $('cancelRestart').hidden = !details.allowCancel;
     nextAction = action;
