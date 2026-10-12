@@ -13,6 +13,8 @@ for token, name, mime in [
     ("GRINCH_ATLAS", "grinch-gifts.png", "image/png"),
     ("GRINCH_REVISED", "grinch-revised.png", "image/png"),
     ("GRINCH_IPHONE", "grinch-iphone.png", "image/png"),
+    ("GRINCH_CURSOR", "grinch-cursor.svg", "image/svg+xml"),
+    ("GRINCH_POINTER", "grinch-pointer.svg", "image/svg+xml"),
     ("CAVEAT_LATIN", "caveat-latin-700-normal.woff2", "font/woff2"),
     ("CAVEAT_CYRILLIC", "caveat-cyrillic-700-normal.woff2", "font/woff2"),
     ("CORMORANT", "cormorant-garamond-latin-600-normal.woff2", "font/woff2"),

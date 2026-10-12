@@ -166,3 +166,8 @@ button:disabled{cursor:default}
 @media(max-width:370px){.header{padding:0 10px}.brand{font-size:32px}.header nav a{font-size:11px}.header nav{display:none}.popup-copy{margin-left:53%;width:42%;margin-right:5%}.popup.long-title h2{font-size:26px}.popup p{font-size:11px}.popup{min-height:403px}.popup-copy{min-height:210px}.grinch-art{bottom:136px}.calendar-shell{padding:9px 6px}.calendar{gap:8px 5px}}
 @media(max-height:520px) and (orientation:landscape){.overlay{padding:35px 28px}.popup{width:490px;min-height:310px}.popup-copy{margin-top:35px;margin-bottom:87px;min-height:185px}.popup h2{font-size:43px}.popup.long-title h2{font-size:31px}.popup p{font-size:12px}.popup.spa h2{font-size:62px}.grinch-art{width:49%;bottom:62px}.popup-button{bottom:18px;left:17%;width:66%;min-height:43px;font-size:19px;padding:9px 13px}.popup-decoration{width:86px;height:84px;top:-23px;left:-23px}.popup-cancel{bottom:0;font-size:10px;padding:2px}.popup-window{top:11px;font-size:8px;padding:4px 8px}.gift-emoji{font-size:21px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.snowfall{display:none}.popup{transform:none}}
+@media(hover:hover) and (pointer:fine){
+  :root{--grinch-cursor:url('__GRINCH_CURSOR__') 11 3,auto;--grinch-pointer:url('__GRINCH_POINTER__') 11 3,pointer}
+  html,button:disabled,.door.opened{cursor:var(--grinch-cursor)}
+  a[href],button:enabled{cursor:var(--grinch-pointer)}
+}

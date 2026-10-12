@@ -12,6 +12,8 @@ The original inventory contains 34 real gifts, including duplicates, and three l
 
 The interface, popup captions, buttons, accessibility labels and notices are all in English. Every window popup includes its window number and a themed Grinch illustration. Decorations and accent colours vary by gift. Gift popups close with their central labelled button, Escape or a click outside; there are no close icons.
 
+On devices with a mouse or trackpad, this page uses a small green Grinch-hand cursor. Links and available buttons add a gold sparkle. The cursors are embedded in the HTML, use native browser cursor handling and apply only to this page; touch controls stay unchanged.
+
 ## Saved games
 
 - Progress is saved in this browser's `localStorage`. Other tabs on the same origin update automatically. Web Locks prevent simultaneous clicks in those tabs from awarding the same window twice.

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+  <defs>
+    <linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e3f596"/><stop offset=".5" stop-color="#b4d955"/><stop offset="1" stop-color="#709d31"/></linearGradient>
+    <path id="hand" d="M11 3C8 3 8 6 8 8l1 13-3-3c-3-3-6 0-3 4l4 6 2 5h16l1-4c2-3 3-5 3-9 0-3-3-4-5-2 1-4-3-6-5-3-1-3-4-3-5 0V7c0-3-1-4-3-4Z"/>
+  </defs>
+  <use href="#hand" fill="none" stroke="#ffe191" stroke-width="3" stroke-linejoin="round"/>
+  <use href="#hand" fill="url(#fur)" stroke="#24461c" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="m10 6 1 10m4 0v7m5-5v6m5-3-1 4" fill="none" stroke="#436d22" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="m7 25 3 1-1 2 3 1m13-1-2 1 1 2m-12-2 2-1m-4-10-1-9" fill="none" stroke="#f0ffc3" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M9 32h16v6H9Z" fill="#ce2841" stroke="#ffe191" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M8 32q2-3 4-1 2-2 4 0 2-2 4 0 3-2 6 1l-1 3H9Z" fill="#fff4df" stroke="#d5cbae" stroke-width=".6"/>
+  <path d="m25 2 1.6 4.4L31 8l-4.4 1.6L25 14l-1.6-4.4L19 8l4.4-1.6Z" fill="#ffe59a" stroke="#4a5025" stroke-width=".7"/>
+</svg>
